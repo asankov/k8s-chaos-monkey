@@ -31,18 +31,23 @@ func main() {
 	// but for now it should be fine, since we expect that we are always running inside Kubernetes.
 	kubeConfig, err := rest.InClusterConfig()
 	if err != nil {
+		fmt.Printf("[ERROR] error while getting in cluster config: %v", err)
 		return
 	}
 	clientset, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
+		fmt.Printf("[ERROR] error while building Kubernetes client: %v", err)
 		return
 	}
 
 	cfg, err := config.NewConfigFromEnv()
 	if err != nil {
+		fmt.Printf("[ERROR] error while getting application config: %v", err)
 		return
 	}
 
+	// Listen for SIGINT and SIGKILL OS channel
+	// and try to exit gracefully once received.
 	cancelSignal := make(chan os.Signal)
 	signal.Notify(cancelSignal, os.Interrupt, os.Kill)
 
