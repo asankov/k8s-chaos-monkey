@@ -6,21 +6,11 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"os/signal"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-
-	//
-	// Uncomment to load all auth plugins
-	// _ "k8s.io/client-go/plugin/pkg/client/auth"
-	//
-	// Or uncomment to load specific auth plugins
-	// _ "k8s.io/client-go/plugin/pkg/client/auth/azure"
-	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	// _ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 
 	"github.com/asankov/k8s-chaos-monkey/config"
 )
@@ -31,36 +21,28 @@ func main() {
 	// but for now it should be fine, since we expect that we are always running inside Kubernetes.
 	kubeConfig, err := rest.InClusterConfig()
 	if err != nil {
-		fmt.Printf("[ERROR] error while getting in cluster config: %v", err)
+		fmt.Fprintf(os.Stderr, "[ERROR] error while getting in cluster config: %v\n", err)
 		return
 	}
 	clientset, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
-		fmt.Printf("[ERROR] error while building Kubernetes client: %v", err)
+		fmt.Fprintf(os.Stderr, "[ERROR] error while building Kubernetes client: %v\n", err)
 		return
 	}
 
 	cfg, err := config.NewConfigFromEnv()
 	if err != nil {
-		fmt.Printf("[ERROR] error while getting application config: %v", err)
+		fmt.Fprintf(os.Stderr, "[ERROR] error while getting application config: %v\n", err)
 		return
 	}
 
-	// Listen for SIGINT and SIGKILL OS channel
-	// and try to exit gracefully once received.
-	cancelSignal := make(chan os.Signal)
-	signal.Notify(cancelSignal, os.Interrupt, os.Kill)
-
 	for {
-		select {
-		case <-time.After(time.Duration(cfg.PeriodInSeconds) * time.Second):
-			if err := deletePod(clientset, cfg); err != nil {
-				fmt.Printf("[ERROR]: %v", err)
-			}
-		case <-cancelSignal:
-			fmt.Printf("Detected cancel signal, stopping application")
-			return
+		if err := deletePod(clientset, cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "[ERROR]: %v\n", err)
 		}
+		// }
+
+		time.Sleep(time.Duration(cfg.PeriodInSeconds) * time.Second)
 	}
 }
 
@@ -71,7 +53,7 @@ func deletePod(clientset *kubernetes.Clientset, cfg *config.Config) error {
 	if err != nil {
 		return fmt.Errorf("error while listing Pods: %w", err)
 	}
-	fmt.Printf("There are %d pods in the cluster\n", len(pods.Items))
+	fmt.Fprintf(os.Stderr, "There are %d pods in the [%v] namespace\n", len(pods.Items), cfg.Namespace)
 
 	// Choose a random pod to be deleted.
 	// Use crypto/rand, because math/rand produces deterministic results and should not be used in production code.
@@ -81,7 +63,7 @@ func deletePod(clientset *kubernetes.Clientset, cfg *config.Config) error {
 	}
 	podToBeDeleted := pods.Items[i.Int64()]
 
-	fmt.Printf("Chose to delete pod [%v]", podToBeDeleted.Name)
+	fmt.Fprintf(os.Stderr, "Chose to delete pod [%v]\n", podToBeDeleted.Name)
 
 	// Delete the pod.
 	// If we want to have some sort of timeout for this API call we can create a new TimeoutContext via context.WithTimeout.
@@ -89,7 +71,7 @@ func deletePod(clientset *kubernetes.Clientset, cfg *config.Config) error {
 		return fmt.Errorf("error while deleting pod [%v]: %w", podToBeDeleted.Name, err)
 	}
 
-	fmt.Printf("Succesfully deleted the pod [%v]", podToBeDeleted.Name)
+	fmt.Fprintf(os.Stderr, "Succesfully deleted the pod [%v]\n", podToBeDeleted.Name)
 
 	return nil
 }
