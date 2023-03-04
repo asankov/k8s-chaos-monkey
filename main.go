@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
-	"math/big"
 	"os"
 	"time"
 
@@ -51,34 +49,4 @@ func main() {
 
 		time.Sleep(time.Duration(cfg.PeriodInSeconds) * time.Second)
 	}
-}
-
-func deletePod(clientset *kubernetes.Clientset, cfg *config.Config) error {
-	// List all pods in the given namespace.
-	// If we want to have some sort of timeout for this API call we can create a new TimeoutContext via context.WithTimeout.
-	pods, err := clientset.CoreV1().Pods(cfg.Namespace).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return fmt.Errorf("error while listing Pods: %w", err)
-	}
-	fmt.Fprintf(os.Stderr, "There are %d pods in the [%v] namespace\n", len(pods.Items), cfg.Namespace)
-
-	// Choose a random pod to be deleted.
-	// Use crypto/rand, because math/rand produces deterministic results and should not be used in production code.
-	i, err := rand.Int(rand.Reader, big.NewInt(int64(len(pods.Items))))
-	if err != nil {
-		return fmt.Errorf("error while generating random number: %w", err)
-	}
-	podToBeDeleted := pods.Items[i.Int64()]
-
-	fmt.Fprintf(os.Stderr, "Chose to delete pod [%v]\n", podToBeDeleted.Name)
-
-	// Delete the pod.
-	// If we want to have some sort of timeout for this API call we can create a new TimeoutContext via context.WithTimeout.
-	if err := clientset.CoreV1().Pods(cfg.Namespace).Delete(context.Background(), podToBeDeleted.Name, metav1.DeleteOptions{}); err != nil {
-		return fmt.Errorf("error while deleting pod [%v]: %w", podToBeDeleted.Name, err)
-	}
-
-	fmt.Fprintf(os.Stderr, "Succesfully deleted the pod [%v]\n", podToBeDeleted.Name)
-
-	return nil
 }
