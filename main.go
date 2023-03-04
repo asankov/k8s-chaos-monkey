@@ -37,9 +37,9 @@ func main() {
 	}
 
 	deletor := deletor.NewDeletor(cfg.Namespace, func(ctx context.Context) (*v1.PodList, error) {
-		return clientset.CoreV1().Pods(cfg.Namespace).List(context.Background(), metav1.ListOptions{})
+		return clientset.CoreV1().Pods(cfg.Namespace).List(ctx, metav1.ListOptions{})
 	}, func(ctx context.Context, name string) error {
-		return clientset.CoreV1().Pods(cfg.Namespace).Delete(context.Background(), name, metav1.DeleteOptions{})
+		return clientset.CoreV1().Pods(cfg.Namespace).Delete(ctx, name, metav1.DeleteOptions{})
 	})
 
 	for {
