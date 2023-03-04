@@ -50,7 +50,7 @@ To deploy the application:
     ```
 
     ```shell
-    kubectl get pods -n chaos -w
+    $ kubectl get pods -n chaos -w
     NAME                                READY   STATUS    RESTARTS   AGE
     nginx-deployment-7fb96c846b-bnzpx   1/1     Running   0          4s
     nginx-deployment-7fb96c846b-w6fn7   1/1     Running   0          64s
