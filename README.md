@@ -32,7 +32,7 @@ docker build -t <ACCOUNT>/<REPO>:<TAG> -f Dockerfile .
 
 Or you can use the one which I already built and pushed into my public Docker Hub profile: [asankov/k8s-chaos-monkey](https://hub.docker.com/r/asankov/k8s-chaos-monkey/tags).
 
-[NOTE:](https://hub.docker.com/r/asankov/k8s-chaos-monkey/tags) Using `latest` is a bad practice, because when we use `latest` tag we don't have any reproducability over what runs in our cluster.
+**NOTE:** Using `latest` is a bad practice, because when we use `latest` tag we don't have any reproducability over what runs in our cluster.
 If you want to pull this image use the `0.1` tag.
 
 ## Kubernetes
